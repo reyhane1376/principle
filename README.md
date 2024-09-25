@@ -107,13 +107,21 @@ class ConfirmationMailMailer
     public function sendTo(User $user)
     {
         $message = $this->createMessageFor($user);
+        $this->sendMessage($message);
     }
 
     private function createMessageFor(User $user): Message {
         $subject = $this->translator->translate(text: 'please confirm your email address');
-        $body = $this->templating->render(template: 'email.confirm', [
+        $body = $this->templating->render('email.confirm', [
             'confirm_code' => $user->getConfirmCode(),
         ]);
+
+        return new Message($subject, $body, $user->getEmailAddress());
+    }
+
+    private function sendMessage(Message $message)
+    {
+        $this->mailer->send($message);
     }
 }
 
@@ -172,4 +180,82 @@ namespace Src\Solid\Srp;
 interface TemplatingEngineInterface {
     public function render(string $template, array $params): string;
 }
+```
+
+```php
+namespace Src\Solid\Srp;
+
+interface MailerInterface
+{
+    public function send(Message $message);
+}
+```
+
+### after
+
+```php
+<?php
+
+use TemplatingEngineInterface;
+use TranslatorInterface;
+use Message;
+use User;
+
+class ConfirmationMailFactory
+{
+    private TemplatingEngineInterface $templating;
+    private TranslatorInterface $translator;
+
+    public function __construct(TemplatingEngineInterface $templating, TranslatorInterface $translator)
+    {
+        $this->templating = $templating;
+        $this->translator = $translator;
+    }
+
+    public function createMessageFor(User $user): Message
+    {
+        $subject = $this->translator->translate(text: 'please confirm your email address');
+        $body = $this->templating->render(template: 'email.confirm', [
+            'confirm_code' => $user->getConfirmCode()
+        ]);
+
+        return new Message($subject, $body, $user->getEmailAddress());
+    }
+}
+```
+
+```php
+<?php
+
+namespace Src\Solid\Srp;
+
+class ConfirmationMailMailer
+{
+    private $confirmationMailFactory;
+    private $mailer;
+
+    public function __construct(
+        ConfirmationMailFactory $confirmationMailFactory,
+        MilerInterface $mailer
+    ) {
+        $this->confirmationMailFactory = $confirmationMailFactory;
+        $this->mailer     = $mailer;
+    }
+
+    public function sendTo(User $user)
+    {
+        $message = $this->createMessageFor($user);
+        $this->sendMessage($message);
+    }
+
+    private function createMessageFor(User $user): Message {
+        return $this->confirmationMailFactory->createMessageFor($user);
+    }
+
+    private function sendMessage(Message $message)
+    {
+        $this->mailer->send($message);
+    }
+}
+
 ```
