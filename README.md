@@ -259,3 +259,194 @@ class ConfirmationMailMailer
 }
 
 ```
+# OCP (open close principle)
+
+## You should be able to extend a class's behavior without modifying it.
+
+## Two different perspective:
+
+1. Reducing the amount of change (Robert C Martin)
+2. Backward compatibility (Bertrand Meyer)
+
+### Violations of the open/close principle:
+
+It contains conditions to determine a strategy.
+
+Conditions using the same variables or constants are recurring inside the class or related classes. 
+
+The class contains hard-coded references to other classes or class names.
+
+Inside the class, objects are being created using the new operator. 
+
+The class has protected properties or methods to allow changing its behavior by overriding state or behavior. 
+
+### before
+
+```php 
+namespace Src\Solid\OCP;
+
+class GenericEncoder {
+    public function encode($data, string $format): string {
+        if ($format === 'json') {
+            $encoder = new JsonEncoder();
+        } elseif ($format === 'xml') {
+            $encoder = new XMLEncoder();
+        } else {
+            trow new InvalidArgumentException('invalid format')
+        }
+        return $encoder->encode($data);
+    }
+}
+```
+
+```php
+namespace Src\Solid\OCP;
+
+class JsonEncoder {
+    public function __construct() {
+    }
+
+    public function encode($data): string {
+        return '{data:""}';
+    }
+}
+```
+
+### after
+
+first fix it with srp:
+
+```php
+namespace Src\Solid\OCP;
+
+interface EncoderInterface
+{
+    public function encode($data): string;
+}
+```
+```php
+class JsonEncoder implements EncoderInterface
+{
+    // ... implementation of encode() method ...
+}
+```
+
+```php
+class XMLEncoder implements EncoderInterface
+{
+    // ... implementation of encode() method ...
+}
+```
+then ocp:
+
+```php
+namespace Src\Solid\OCP;
+
+class EncoderFactory
+{
+    public function createEncoder(string $format): EncoderInterface
+    {
+        if ($format === 'json') {
+            $encoder = new JsonEncoder();
+        } elseif ($format === 'xml') {
+            $encoder = new XMLEncoder();
+        } else {
+            throw new InvalidArgumentException(message: 'invalid format');
+        }
+
+        return $encoder;
+    }
+}
+```
+
+```php
+class GenericEncoder
+{
+    private $encoderFactory;
+
+    /**
+     * @param EncoderFactory
+     */
+    public function __construct(EncoderFactory $encoderFactory)
+    {
+        $this->encoderFactory = $encoderFactory;
+    }
+
+    public function encode($data, string $format): string
+    {
+        $encoder = $this->encoderFactory->createEncoder($format);
+
+        return $encoder->encode($data);
+    }
+}
+```
+
+then make it better:
+
+```php
+namespace Src\Solid\OCP;
+
+class EncoderFactory
+{
+    private $factories = [];
+
+    public function addEncoderFactory(string $format, callable $factory)
+    {
+        $this->factories[$format] = $factory;
+    }
+
+    public function createEncoder(string $format): EncoderInterface
+    {
+        if (!isset($this->factories[$format])) {
+            throw new InvalidArgumentException(message: 'invalid format');
+        }
+
+        $factory = $this->factories[$format];
+
+        return $factory();
+    }
+}
+```
+
+then make it better:(immutable)
+
+```php
+namespace Src\Solid\OCP;
+
+interface EncoderFactoryInterface
+{
+    public function createEncoder(string $format): EncoderInterface;
+}
+```
+```php
+namespace Src\Solid\OCP;
+
+interface EncoderFactoryConfigInterface
+{
+    public function addEncoderFactory(string $format, callable $factory): void;
+}
+```
+```php
+class EncoderFactory implements EncoderFactoryConfigInterface, EncoderFactoryInterface
+```
+```php
+class GenericEncoder
+{
+    private $encoderFactory;
+
+    /**
+     * @param EncoderFactoryInterface $encoderFactory
+     */
+    public function __construct(EncoderFactoryInterface $encoderFactory)
+    {
+        $this->encoderFactory = $encoderFactory;
+    }
+
+    public function encode($data, string $format): string
+    {
+        $encoder = $this->encoderFactory->createEncoder($format);
+
+        return $encoder->encode($data);
+    }
+}
+```
