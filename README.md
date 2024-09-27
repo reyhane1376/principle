@@ -590,3 +590,162 @@ class LocalFile implements FileInterface
     }
 }
 ```
+
+----------------------
+Is it mandatory to specify a return type for methods within an interface 
+```php
+interface DownloadableFileInterface extends FileInterface
+{
+    public function download(): bool;
+}
+```
+
+
+-----------
+### before
+```php
+interface FileServiceInterface
+{
+    public function encode(FileInterface $file);
+}
+```
+
+```php
+namespace Src\Solid\LSP;
+
+class FileService implements FileServiceInterface
+{
+    public function encode(FileInterface $file)
+    {
+        if (!($file instanceof LocalFile)) {
+            throw new InvalidArgumentException(message: 'only local file can be encoded.');
+        }
+    }
+}
+```
+### after
+
+```php
+interface EncodeableFileInterface extends FileInterface
+{
+}
+```
+```php
+namespace Src\Solid\LSP;
+
+class FileService implements FileServiceInterface
+{
+    public function encode(EncodeableFileInterface $file)
+    {
+    }
+}
+```
+```php
+interface FileServiceInterface
+{
+    public function encode(EncodeableFileInterface $file);
+}
+```
+# isp (Interface Segregation Principle)
+
+## Make fine-grained interfaces that are client specific.
+
+### Violations of the interface segregation principle:
+
+Multiple use cases.
+No interface, just a class.
+
+### before
+
+```php
+interface Notifier
+{
+    public function sendSMS();
+    public function sendEmail();
+    public function sendWebSocket();
+}
+```
+```php
+namespace Src\Solid\ISP;
+
+class KaveNegarSMSProvider implements Notifier
+{
+    public function sendSMS()
+    {
+        // TODO: Implement sendSMS() method.
+    }
+
+    public function sendEmail()
+    {
+        // TODO: Implement sendEmail() method.
+    }
+
+    public function sendWebSocket()
+    {
+        // TODO: Implement sendWebSocket() method.
+    }
+}
+```
+```php
+namespace Src\Solid\ISP;
+
+class MailChimpEmailProvider implements Notifier
+{
+    public function sendSMS()
+    {
+        // TODO: Implement sendSMS() method.
+    }
+
+    public function sendEmail()
+    {
+        // TODO: Implement sendEmail() method.
+    }
+
+    public function sendWebSocket()
+    {
+        // TODO: Implement sendWebSocket() method.
+    }
+}
+```
+### after
+
+```php
+interface SMSProvider
+{
+    public function sendSMS();
+}
+
+```
+```php
+interface EmailProvider
+{
+}
+```
+```php
+interface WebSocketProvider
+{
+    public function sendWebSocket();
+}
+```
+```php
+namespace Src\Solid\ISP;
+
+class KaveNegarSMSProvider implements SMSProvider
+{
+    public function sendSMS()
+    {
+        // TODO: Implement sendSMS() method.
+    }
+}
+```
+```php
+namespace Src\Solid\ISP;
+
+class MailChimpEmailProvider implements EmailProvider
+{
+    public function sendEmail()
+    {
+        // TODO: Implement sendEmail() method.
+    }
+}
+```
