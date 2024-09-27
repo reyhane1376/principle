@@ -749,3 +749,122 @@ class MailChimpEmailProvider implements EmailProvider
     }
 }
 ```
+
+# DIP (Dependancy Inversio Principle)
+
+## Depend on abstractions, not on concretions.
+
+### Violations of the dependency inversion principle:
+
+A high-level class depends on a low-level class.
+Vendor lock-in.
+
+### before
+
+```php
+namespace Src\Solid\DIP;
+
+class Authentication
+{
+    private $connection;
+
+    /**
+     * @param Connection $connection
+     */
+    public function __construct(Connection $connection)
+    {
+        $this->connection = $connection;
+    }
+
+    public function check(string $username, string $password): bool
+    {
+        $user = $this->connection->query("SELECT * FROM users WHERE username = ?", [$username]);
+
+        if (!$user) {
+            throw new RuntimeException(message: 'invalid username or password');
+        }
+
+        // ...
+    }
+}
+```
+
+```php
+namespace Src\Solid\DIP;
+
+class Connection
+{
+    public function query(string $query, array $params): bool
+    {
+        return true;
+    }
+}
+```
+```php
+interface UserProviderInterface
+{
+    public function findUser(string $username): bool;
+}
+```
+```php
+namespace Src\Solid\DIP;
+
+class UserProvider implements UserProviderInterface
+{
+    private $connection;
+
+    /**
+     * @param Connection $connection
+     */
+    public function __construct(Connection $connection)
+    {
+        $this->connection = $connection;
+    }
+
+    public function findUser(string $username)
+    {
+        $user = $this->connection->query("SELECT * FROM users WHERE username=?", ['username' => $username]);
+
+        if (!$user) {
+            throw new RuntimeException(message: 'invalid username or password');
+        }
+    }
+}
+```
+```php
+namespace Src\Solid\DIP;
+
+class Authentication
+{
+    private $user_provider;
+
+    /**
+     * @param UserProviderInterface $user_provider
+     */
+    public function __construct(UserProviderInterface $user_provider)
+    {
+        $this->user_provider = $user_provider;
+    }
+
+    public function check(string $username, string $password): bool
+    {
+        $user = $this->user_provider->findUser($username);
+
+        if (!$user) {
+            throw new RuntimeException(message: 'invalid username or password');
+        }
+    }
+}
+```
+```php
+namespace Src\Solid\DIP;
+
+class MongoUserProvider implements UserProviderInterface
+{
+    public function findUser(string $username): bool
+    {
+        // TODO: Implement findUser() method.
+        return true;
+    }
+}
+```
