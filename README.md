@@ -450,3 +450,143 @@ class GenericEncoder
     }
 }
 ```
+# lsp (open close principle)
+
+## Derived classes must be substitutable for their base classes.
+
+### Violations of the Liskov substitution principle:
+
+A derived class does not have an implementation for all methods.
+Different substitutes return things of different types.
+A derived class is less permissive with regard to method arguments.
+Secretly programming against a more specific type.
+
+### before
+
+```php
+interface FileInterface
+{
+    public function rename();
+    public function move();
+    public function copy();
+    public function download();
+}
+```
+```php
+namespace Src\Solid\LSP;
+
+class GoogleDriveFile implements FileInterface
+{
+    public function rename()
+    {
+        // TODO: Implement rename() method.
+    }
+
+    public function move()
+    {
+        // TODO: Implement move() method.
+    }
+
+    public function copy()
+    {
+        // TODO: Implement copy() method.
+    }
+
+    public function download()
+    {
+        // TODO: Implement download() method.
+    }
+}
+```
+
+```php
+namespace Src\Solid\LSP;
+
+class DropBoxFile implements FileInterface
+{
+    public function rename()
+    {
+        // TODO: Implement rename() method.
+    }
+
+    public function move()
+    {
+        // TODO: Implement move() method.
+    }
+
+    public function copy()
+    {
+        // TODO: Implement copy() method.
+    }
+
+    public function download()
+    {
+        // TODO: Implement download() method.
+    }
+}
+```
+```php
+namespace Src\Solid\LSP;
+
+class LocalFile implements FileInterface
+{
+    public function rename()
+    {
+        // TODO: Implement rename() method.
+    }
+
+    public function move()
+    {
+        // TODO: Implement move() method.
+    }
+
+    public function copy()
+    {
+        // TODO: Implement copy() method.
+    }
+
+    public function download()
+    {
+        // TODO: Implement download() method.
+    }
+}
+```
+
+## download method not defined for localFile class
+
+### after
+
+change download method to new interface
+
+```php
+interface DownloadableFileInterface extends FileInterface
+{
+    public function download();
+}
+```
+```php
+class GoogleDriveFile implements DownloadableFileInterface
+{
+}
+```
+```php
+namespace Src\Solid\LSP;
+
+class LocalFile implements FileInterface
+{
+    public function rename()
+    {
+        // TODO: Implement rename() method.
+    }
+
+    public function move()
+    {
+        // TODO: Implement move() method.
+    }
+
+    public function copy()
+    {
+        // TODO: Implement copy() method.
+    }
+}
+```
